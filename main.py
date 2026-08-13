@@ -1,11 +1,12 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from typing import List
 import joblib
 
 
 app = FastAPI(
-    title="Tea & Prediction API",
+    title="BrewPredict API",
     description="FastAPI application for managing teas and making ML predictions",
     version="1.0.0"
 )
@@ -52,12 +53,13 @@ teas: List[Tea] = []
 # Root Endpoint
 # -----------------------------
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def read_root():
-    return {
-        "message": "Welcome to the Tea API!",
-        "status": "running"
-    }
+    try:
+        with open("index.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read(), status_code=200)
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>BrewPredict Dashboard: index.html not found</h1>", status_code=404)
 
 
 # -----------------------------
