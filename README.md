@@ -1,10 +1,6 @@
-# FastAPI_Mini_project
-This jus a quick check project for FASTAPI and Flask
+# BrewPredict: Tea Management & ML Prediction API
 
-Tea & ML Prediction API
-
-A simple and extensible FastAPI-based REST API for managing tea products and performing machine-learning predictions. The project demonstrates CRUD operations, Pydantic data validation, API documentation with Swagger UI, and integration of a trained ML model using joblib.
-
+A high-performance, fully documented FastAPI REST API for managing tea products (CRUD operations) and serving machine learning predictions using a trained Scikit-Learn model.
 
 ---
 
