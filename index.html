@@ -207,10 +207,7 @@
             color: var(--text-primary);
         }
 
-        .predict-panel input:focus {
-            border-color: var(--accent-secondary);
-            box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
-        }
+
 
         .grid-2col {
             display: grid;
@@ -392,26 +389,7 @@
             gap: 0.75rem;
         }
 
-        .result-setosa {
-            color: #10b981;
-            background: linear-gradient(135deg, #10b981, #34d399);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
 
-        .result-versicolor {
-            color: #6366f1;
-            background: linear-gradient(135deg, #6366f1, #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .result-virginica {
-            color: #f59e0b;
-            background: linear-gradient(135deg, #f59e0b, #fbbf24);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
 
         /* Brewing Timer Section */
         .timer-display {
@@ -695,51 +673,6 @@
                 </form>
             </div>
 
-            <!-- ML Predictor Panel -->
-            <div class="panel predict-panel">
-                <h2 class="panel-title predict-title">
-                    <i class="fa-solid fa-brain"></i> ML Species Predictor
-                </h2>
-                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: -1rem; line-height: 1.4;">
-                    Input flower morphometrics to classify the plant type using the Scikit-Learn Classifier.
-                </p>
-                
-                <form id="predictForm" onsubmit="runPrediction(event)">
-                    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-                        <div class="grid-2col">
-                            <div class="form-group">
-                                <label for="sepalLength">Sepal Length (cm)</label>
-                                <input type="number" id="sepalLength" value="5.1" step="0.1" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="sepalWidth">Sepal Width (cm)</label>
-                                <input type="number" id="sepalWidth" value="3.5" step="0.1" required>
-                            </div>
-                        </div>
-
-                        <div class="grid-2col">
-                            <div class="form-group">
-                                <label for="petalLength">Petal Length (cm)</label>
-                                <input type="number" id="petalLength" value="1.4" step="0.1" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="petalWidth">Petal Width (cm)</label>
-                                <input type="number" id="petalWidth" value="0.2" step="0.1" required>
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-secondary">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Classify Sample
-                        </button>
-                    </div>
-                </form>
-
-                <!-- ML Output -->
-                <div class="result-container" id="resultContainer">
-                    <div class="result-label">Model Classification Output</div>
-                    <div style="font-size: 0.9rem; color: var(--text-secondary);">Submit feature parameters to calculate prediction</div>
-                </div>
-            </div>
         </div>
 
         <!-- Right Column: Tea Inventory & Analytics -->
@@ -986,73 +919,7 @@
             }
         }
 
-        // Run Machine Learning prediction
-        async function runPrediction(event) {
-            event.preventDefault();
-            const container = document.getElementById("resultContainer");
-            
-            const sepalLength = parseFloat(document.getElementById("sepalLength").value);
-            const sepalWidth = parseFloat(document.getElementById("sepalWidth").value);
-            const petalLength = parseFloat(document.getElementById("petalLength").value);
-            const petalWidth = parseFloat(document.getElementById("petalWidth").value);
 
-            container.innerHTML = `
-                <div class="loader"></div>
-                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem;">Running model classification inference...</div>
-            `;
-
-            try {
-                const response = await fetch(`${API_URL}/predict`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        data: [sepalLength, sepalWidth, petalLength, petalWidth]
-                    })
-                });
-
-                if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.detail || "Prediction failure.");
-                }
-
-                const result = await response.json();
-                const pred = result.prediction;
-                
-                // Map Iris numeric target code to flower name & styling class
-                let flowerName = "";
-                let styleClass = "";
-                let iconClass = "fa-solid fa-clover";
-
-                if (pred === 0) {
-                    flowerName = "Iris Setosa";
-                    styleClass = "result-setosa";
-                    iconClass = "fa-solid fa-circle-nodes";
-                } else if (pred === 1) {
-                    flowerName = "Iris Versicolor";
-                    styleClass = "result-versicolor";
-                    iconClass = "fa-solid fa-leaf";
-                } else {
-                    flowerName = "Iris Virginica";
-                    styleClass = "result-virginica";
-                    iconClass = "fa-solid fa-tree";
-                }
-
-                container.innerHTML = `
-                    <div class="result-label">Inference Result</div>
-                    <div class="result-val ${styleClass}">
-                        <i class="${iconClass}"></i> ${flowerName}
-                    </div>
-                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Class Code: ${pred}</div>
-                `;
-                showToast("Prediction completed successfully!", "info");
-            } catch (err) {
-                container.innerHTML = `
-                    <div class="result-label" style="color: var(--accent-danger);">Inference Error</div>
-                    <div style="font-size: 0.9rem; color: var(--accent-danger); font-weight: 600;">${escapeHtml(err.message)}</div>
-                `;
-                showToast(err.message, "error");
-            }
-        }
 
         // Timer Controls
         function formatTime(sec) {

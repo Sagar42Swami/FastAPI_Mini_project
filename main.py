@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
-import joblib
 import os
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -45,15 +44,7 @@ def get_db():
     finally:
         db.close()
 
-# -----------------------------
-# Load ML Model
-# -----------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-try:
-    model = joblib.load(os.path.join(BASE_DIR, "model.pkl"))
-except FileNotFoundError:
-    model = None
 
 # -----------------------------
 # Pydantic Schemas
@@ -87,13 +78,7 @@ class BrewLogResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# Request model for prediction
-class PredictionRequest(BaseModel):
-    data: List[float] = Field(..., min_length=4, max_length=4)
 
-# Response model
-class PredictionResponse(BaseModel):
-    prediction: int
 
 # -----------------------------
 # Root Endpoint
@@ -232,25 +217,3 @@ def get_analytics(db: Session = Depends(get_db)):
         "flavor_distribution": flavor_dist,
         "rating_distribution": rating_dist
     }
-
-# -----------------------------
-# ML Prediction
-# -----------------------------
-@app.post("/predict", response_model=PredictionResponse)
-def predict(request: PredictionRequest):
-    if model is None:
-        raise HTTPException(
-            status_code=500,
-            detail="ML model is not loaded. Make sure model.pkl exists."
-        )
-
-    try:
-        result = model.predict([request.data])
-        return {
-            "prediction": int(result[0])
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Prediction failed: {str(e)}"
-        )

@@ -85,19 +85,4 @@ def test_tea_crud_and_brews_analytics():
     response = client.get(f"/teas/{tea_id}")
     assert response.status_code == 404
 
-def test_ml_prediction():
-    # Valid input with 4 floats
-    response = client.post("/predict", json={"data": [5.1, 3.5, 1.4, 0.2]})
-    # If the model is not found, it might raise 500 error, but let's check both cases
-    if response.status_code == 200:
-        pred_data = response.json()
-        assert "prediction" in pred_data
-        assert isinstance(pred_data["prediction"], int)
-    else:
-        assert response.status_code == 500
-        assert "ML model is not loaded" in response.json()["detail"]
 
-def test_ml_prediction_validation_error():
-    # Invalid length input
-    response = client.post("/predict", json={"data": [5.1, 3.5]})
-    assert response.status_code == 422  # Pydantic validation error
