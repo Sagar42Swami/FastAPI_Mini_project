@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BrewPredict Dashboard</title>
+    <title>BrewPredict Dashboard & Brew Analytics</title>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         :root {
@@ -18,6 +20,7 @@
             --text-secondary: #9ca3af;
             --accent-primary: #10b981; /* Emerald green */
             --accent-secondary: #6366f1; /* Indigo */
+            --accent-warning: #f59e0b; /* Amber */
             --accent-danger: #ef4444; /* Red */
             --accent-glow: rgba(16, 185, 129, 0.15);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -33,8 +36,8 @@
         body {
             background-color: var(--bg-color);
             background-image: 
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.12) 0px, transparent 50%);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
@@ -49,11 +52,11 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(11, 15, 25, 0.8);
+            background: rgba(11, 15, 25, 0.85);
         }
 
         .nav-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 1.25rem 2rem;
             display: flex;
@@ -111,17 +114,17 @@
 
         /* Main Dashboard Grid */
         main {
-            max-width: 1200px;
+            max-width: 1400px;
             width: 100%;
-            margin: 2.5rem auto;
+            margin: 2rem auto;
             padding: 0 2rem;
             display: grid;
-            grid-template-columns: 1.1fr 1.9fr;
-            gap: 2.5rem;
+            grid-template-columns: 1fr 1.8fr;
+            gap: 2rem;
             flex-grow: 1;
         }
 
-        @media (max-width: 968px) {
+        @media (max-width: 1024px) {
             main {
                 grid-template-columns: 1fr;
             }
@@ -137,7 +140,7 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
             display: flex;
             flex-direction: column;
-            gap: 1.75rem;
+            gap: 1.5rem;
             transition: var(--transition);
         }
 
@@ -164,6 +167,10 @@
             color: var(--accent-secondary);
         }
 
+        .panel-title.timer-title i {
+            color: var(--accent-warning);
+        }
+
         /* Forms styling */
         .form-group {
             display: flex;
@@ -177,7 +184,7 @@
             color: var(--text-secondary);
         }
 
-        input {
+        input, select {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--card-border);
             border-radius: 10px;
@@ -187,11 +194,17 @@
             transition: var(--transition);
         }
 
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: var(--accent-primary);
             background: rgba(255, 255, 255, 0.06);
             box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        /* Select styling override */
+        select option {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
         }
 
         .predict-panel input:focus {
@@ -242,6 +255,17 @@
             box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
         }
 
+        .btn-warning {
+            background: linear-gradient(135deg, var(--accent-warning), #d97706);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+        }
+
         .btn-danger {
             background: rgba(239, 68, 68, 0.15);
             border: 1px solid rgba(239, 68, 68, 0.3);
@@ -249,6 +273,8 @@
             padding: 0.4rem 0.75rem;
             font-size: 0.8rem;
             border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
         }
 
         .btn-danger:hover {
@@ -321,7 +347,7 @@
         .empty-state {
             grid-column: 1 / -1;
             text-align: center;
-            padding: 3rem 0;
+            padding: 2.5rem 0;
             color: var(--text-secondary);
             display: flex;
             flex-direction: column;
@@ -385,6 +411,126 @@
             background: linear-gradient(135deg, #f59e0b, #fbbf24);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+        }
+
+        /* Brewing Timer Section */
+        .timer-display {
+            font-size: 3.5rem;
+            font-weight: 800;
+            text-align: center;
+            letter-spacing: 2px;
+            color: var(--accent-warning);
+            text-shadow: 0 0 15px rgba(245, 158, 11, 0.25);
+            font-variant-numeric: tabular-nums;
+            margin: 0.5rem 0;
+        }
+
+        .rating-input {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .rating-star {
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .rating-star.active, .rating-star:hover {
+            color: var(--accent-warning);
+            transform: scale(1.1);
+        }
+
+        /* Analytics Stat Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--accent-primary);
+            margin-top: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Brew Logs History */
+        .brew-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 250px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .brew-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .brew-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .brew-list::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+
+        .brew-item {
+            background: rgba(255,255,255,0.01);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brew-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .brew-tea-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .brew-time-details {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .brew-stars {
+            color: var(--accent-warning);
+            font-size: 0.85rem;
         }
 
         /* Notification/Toast */
@@ -469,9 +615,56 @@
 
     <!-- Main Dashboard -->
     <main>
-        <!-- Left Side: Controls & Forms -->
-        <div style="display: flex; flex-direction: column; gap: 2.5rem;">
+        <!-- Left Column: Brew Actions, Adding Teas, & ML Model -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
             
+            <!-- Live Brewing Session Timer Panel -->
+            <div class="panel">
+                <h2 class="panel-title timer-title">
+                    <i class="fa-solid fa-hourglass-half"></i> Brew Timer
+                </h2>
+                
+                <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div class="form-group">
+                        <label for="timerTeaSelect">Select Tea to Brew</label>
+                        <select id="timerTeaSelect">
+                            <option value="">-- Choose a blend --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="timerDuration">Steep Duration (seconds)</label>
+                        <input type="number" id="timerDuration" value="180" min="10" step="5">
+                    </div>
+
+                    <div class="timer-display" id="timerDisplay">03:00</div>
+
+                    <div style="display: flex; gap: 1rem;">
+                        <button id="btnStartTimer" class="btn btn-warning" onclick="toggleTimer()" style="flex: 1;">
+                            <i class="fa-solid fa-play"></i> Start Steep
+                        </button>
+                        <button id="btnResetTimer" class="btn" onclick="resetTimer()" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--card-border)">
+                            Reset
+                        </button>
+                    </div>
+
+                    <!-- Log Rating Section (shown when timer finishes or is paused/stopped) -->
+                    <div id="logBrewSection" style="display: none; border-top: 1px solid var(--card-border); padding-top: 1rem; flex-direction: column; gap: 1rem;">
+                        <div style="font-size: 0.9rem; text-align: center; color: var(--text-secondary);">How did it taste? Rate your brew:</div>
+                        <div class="rating-input">
+                            <i class="fa-solid fa-star rating-star" data-rating="1" onclick="setRating(1)"></i>
+                            <i class="fa-solid fa-star rating-star" data-rating="2" onclick="setRating(2)"></i>
+                            <i class="fa-solid fa-star rating-star" data-rating="3" onclick="setRating(3)"></i>
+                            <i class="fa-solid fa-star rating-star" data-rating="4" onclick="setRating(4)"></i>
+                            <i class="fa-solid fa-star rating-star" data-rating="5" onclick="setRating(5)"></i>
+                        </div>
+                        <button class="btn btn-primary" onclick="submitBrewLog()">
+                            <i class="fa-solid fa-floppy-disk"></i> Log Brew Session
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Create Tea Panel -->
             <div class="panel">
                 <h2 class="panel-title">
@@ -487,7 +680,7 @@
                         
                         <div class="form-group">
                             <label for="teaFlavor">Flavor Profile</label>
-                            <input type="text" id="teaFlavor" placeholder="e.g. Earthy, Floral" required minlength="1">
+                            <input type="text" id="teaFlavor" placeholder="e.g. Earthy, Floral, Citric" required minlength="1">
                         </div>
                         
                         <div class="form-group">
@@ -549,48 +742,120 @@
             </div>
         </div>
 
-        <!-- Right Side: Tea Inventory -->
-        <div class="panel" style="gap: 1.5rem;">
-            <h2 class="panel-title">
-                <i class="fa-solid fa-boxes-stacked"></i> Curated Tea Inventory
-            </h2>
+        <!-- Right Column: Tea Inventory & Analytics -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
             
-            <div class="tea-grid" id="teaGrid">
-                <!-- Loaded dynamically -->
-                <div class="empty-state">
-                    <div class="loader"></div>
-                    <div>Loading inventory database...</div>
+            <!-- Curated Tea Inventory -->
+            <div class="panel">
+                <h2 class="panel-title">
+                    <i class="fa-solid fa-boxes-stacked"></i> Curated Tea Inventory
+                </h2>
+                <div class="tea-grid" id="teaGrid">
+                    <div class="loader" style="margin: 2rem auto;"></div>
+                </div>
+            </div>
+
+            <!-- Stats Analytics Panel -->
+            <div class="panel">
+                <h2 class="panel-title">
+                    <i class="fa-solid fa-chart-line"></i> Brew Analytics Dashboard
+                </h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Blends</div>
+                        <div class="stat-val" id="statTotalTeas">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Brews</div>
+                        <div class="stat-val" id="statTotalBrews">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg Price</div>
+                        <div class="stat-val" id="statAvgPrice">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg Rating</div>
+                        <div class="stat-val" id="statAvgRating">-</div>
+                    </div>
+                </div>
+
+                <div class="grid-2col" style="margin-top: 1rem; min-height: 200px;">
+                    <div>
+                        <div style="font-size: 0.85rem; font-weight: 600; text-align: center; color: var(--text-secondary); margin-bottom: 0.5rem;">Flavor distribution</div>
+                        <div style="position: relative; height: 180px; width: 100%;">
+                            <canvas id="flavorChart"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.85rem; font-weight: 600; text-align: center; color: var(--text-secondary); margin-bottom: 0.5rem;">Rating count</div>
+                        <div style="position: relative; height: 180px; width: 100%;">
+                            <canvas id="ratingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Brewing Log Session History -->
+            <div class="panel">
+                <h2 class="panel-title">
+                    <i class="fa-solid fa-history"></i> Brew History Log
+                </h2>
+                <div class="brew-list" id="brewList">
+                    <div class="empty-state">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <div>No brews logged yet. Start brewing!</div>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer>
-        Designed for <a href="https://github.com/Sagar42Swami/FastAPI_Mini_project" target="_blank">BrewPredict (FastAPI & ML API)</a>. 
-        Developed by Sagar Swami & Antigravity.
-    </footer>
-
-    <!-- Toast Notification -->
+    <!-- Global Toast Container -->
     <div id="toast" class="toast">
-        <i class="fa-solid fa-circle-check" id="toastIcon"></i>
-        <span id="toastMessage">Successfully processed.</span>
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toastMsg">Action completed successfully</span>
     </div>
 
-    <!-- Scripting logic -->
-    <script>
-        const API_URL = ""; // Relative paths since frontend is hosted on the same server
+    <footer>
+        Designed for <a href="https://github.com/Sagar42Swami/FastAPI_Mini_project" target="_blank">BrewPredict (FastAPI & ML API)</a>. All rights reserved &copy; 2026.
+    </footer>
 
-        // Show Toast Notification
+    <script>
+        const API_URL = window.location.origin;
+
+        // In-memory data states
+        let allTeas = [];
+        let selectedRating = 5;
+        let flavorChartObj = null;
+        let ratingChartObj = null;
+
+        // Timer States
+        let timerInterval = null;
+        let timerRemaining = 180;
+        let isTimerRunning = false;
+
+        // Helper: Escape HTML strings to prevent XSS
+        function escapeHtml(unsafe) {
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        // Show Toast Notifications
         function showToast(message, type = "success") {
             const toast = document.getElementById("toast");
-            const icon = document.getElementById("toastIcon");
-            const msgSpan = document.getElementById("toastMessage");
+            const msgSpan = document.getElementById("toastMsg");
+            const icon = toast.querySelector("i");
             
-            toast.className = "toast";
+            toast.className = "toast"; // Reset classes
+            
             if (type === "error") {
                 toast.classList.add("toast-danger");
-                icon.className = "fa-solid fa-triangle-exclamation";
+                icon.className = "fa-solid fa-circle-xmark";
             } else if (type === "info") {
                 toast.classList.add("toast-info");
                 icon.className = "fa-solid fa-circle-info";
@@ -606,44 +871,59 @@
             }, 3000);
         }
 
-        // Fetch and render all teas
+        // Fetch and Render Teas
         async function fetchTeas() {
             const grid = document.getElementById("teaGrid");
+            const select = document.getElementById("timerTeaSelect");
             try {
                 const response = await fetch(`${API_URL}/teas`);
                 if (!response.ok) throw new Error("Could not fetch teas.");
                 
-                const teas = await response.json();
-                grid.innerHTML = "";
+                allTeas = await response.json();
                 
-                if (teas.length === 0) {
+                // Render tea grid
+                grid.innerHTML = "";
+                if (allTeas.length === 0) {
                     grid.innerHTML = `
                         <div class="empty-state">
                             <i class="fa-solid fa-mug-hot"></i>
-                            <div>No custom tea blends available in memory.</div>
+                            <div>No custom tea blends available in inventory.</div>
                             <div style="font-size: 0.8rem;">Add your first blend in the left panel.</div>
                         </div>
                     `;
-                    return;
+                } else {
+                    allTeas.forEach((tea) => {
+                        const card = document.createElement("div");
+                        card.className = "tea-card";
+                        card.innerHTML = `
+                            <div class="tea-header">
+                                <div class="tea-name">${escapeHtml(tea.name)}</div>
+                                <button class="btn-danger" onclick="deleteTea(${tea.id})">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                            <div class="tea-flavor">
+                                <i class="fa-solid fa-seedling"></i> ${escapeHtml(tea.flavor)}
+                            </div>
+                            <div class="tea-price">${tea.price.toFixed(2)}</div>
+                        `;
+                        grid.appendChild(card);
+                    });
                 }
-                
-                teas.forEach((tea, index) => {
-                    const card = document.createElement("div");
-                    card.className = "tea-card";
-                    card.innerHTML = `
-                        <div class="tea-header">
-                            <div class="tea-name">${escapeHtml(tea.name)}</div>
-                            <button class="btn-danger" onclick="deleteTea(${index})">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </div>
-                        <div class="tea-flavor">
-                            <i class="fa-solid fa-seedling"></i> ${escapeHtml(tea.flavor)}
-                        </div>
-                        <div class="tea-price">${tea.price.toFixed(2)}</div>
-                    `;
-                    grid.appendChild(card);
+
+                // Render options for Select Dropdown in Brew Timer
+                const lastSelectedId = select.value;
+                select.innerHTML = '<option value="">-- Choose a blend --</option>';
+                allTeas.forEach(tea => {
+                    const opt = document.createElement("option");
+                    opt.value = tea.id;
+                    opt.innerText = `${tea.name} (${tea.flavor})`;
+                    select.appendChild(opt);
                 });
+                if (lastSelectedId) {
+                    select.value = lastSelectedId;
+                }
+
             } catch (err) {
                 console.error(err);
                 grid.innerHTML = `
@@ -671,24 +951,25 @@
 
                 if (!response.ok) {
                     const data = await response.json();
-                    const detailMsg = data.detail ? data.detail[0]?.msg || data.detail : "Validation error.";
+                    const detailMsg = data.detail ? (typeof data.detail === "string" ? data.detail : data.detail[0]?.msg) : "Validation error.";
                     throw new Error(detailMsg);
                 }
 
                 showToast(`Blend "${name}" successfully added!`);
                 document.getElementById("teaForm").reset();
-                fetchTeas();
+                await fetchTeas();
+                await fetchAnalytics();
             } catch (err) {
                 showToast(err.message, "error");
             }
         }
 
         // Delete a tea
-        async function deleteTea(index) {
+        async function deleteTea(id) {
             if (!confirm("Are you sure you want to remove this blend from the inventory?")) return;
             
             try {
-                const response = await fetch(`${API_URL}/teas/${index}`, {
+                const response = await fetch(`${API_URL}/teas/${id}`, {
                     method: "DELETE"
                 });
 
@@ -696,7 +977,9 @@
                 
                 const deleted = await response.json();
                 showToast(`Blend "${deleted.name}" removed.`);
-                fetchTeas();
+                await fetchTeas();
+                await fetchBrews();
+                await fetchAnalytics();
             } catch (err) {
                 showToast(err.message, "error");
             }
@@ -763,25 +1046,284 @@
                 showToast("Prediction completed successfully!", "info");
             } catch (err) {
                 container.innerHTML = `
-                    <div class="result-label" style="color: var(--accent-danger);">Error</div>
-                    <div style="font-size: 0.9rem; color: var(--accent-danger);">${err.message}</div>
+                    <div class="result-label" style="color: var(--accent-danger);">Inference Error</div>
+                    <div style="font-size: 0.9rem; color: var(--accent-danger); font-weight: 600;">${escapeHtml(err.message)}</div>
                 `;
                 showToast(err.message, "error");
             }
         }
 
-        // HTML escaping helper
-        function escapeHtml(str) {
-            return str.replace(/&/g, "&amp;")
-                      .replace(/</g, "&lt;")
-                      .replace(/>/g, "&gt;")
-                      .replace(/"/g, "&quot;")
-                      .replace(/'/g, "&#039;");
+        // Timer Controls
+        function formatTime(sec) {
+            const minutes = Math.floor(sec / 60);
+            const seconds = sec % 60;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
 
-        // Run on page load
-        window.addEventListener("DOMContentLoaded", () => {
-            fetchTeas();
+        function updateTimerDisplay() {
+            document.getElementById("timerDisplay").innerText = formatTime(timerRemaining);
+        }
+
+        function toggleTimer() {
+            const teaId = document.getElementById("timerTeaSelect").value;
+            if (!teaId) {
+                showToast("Please select a tea blend to brew first!", "error");
+                return;
+            }
+
+            const btn = document.getElementById("btnStartTimer");
+            if (isTimerRunning) {
+                // Pause Timer
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                btn.innerHTML = '<i class="fa-solid fa-play"></i> Resume Steep';
+                document.getElementById("logBrewSection").style.display = "flex";
+            } else {
+                // Start Timer
+                isTimerRunning = true;
+                btn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause Steep';
+                btn.className = "btn btn-secondary";
+                document.getElementById("logBrewSection").style.display = "none";
+                
+                timerInterval = setInterval(() => {
+                    if (timerRemaining > 0) {
+                        timerRemaining--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        isTimerRunning = false;
+                        showToast("Brew finished! Time to log your session.", "info");
+                        btn.innerHTML = '<i class="fa-solid fa-check"></i> Complete';
+                        btn.className = "btn btn-primary";
+                        document.getElementById("logBrewSection").style.display = "flex";
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            const durationInput = parseInt(document.getElementById("timerDuration").value) || 180;
+            timerRemaining = durationInput;
+            updateTimerDisplay();
+            
+            const btn = document.getElementById("btnStartTimer");
+            btn.innerHTML = '<i class="fa-solid fa-play"></i> Start Steep';
+            btn.className = "btn btn-warning";
+            document.getElementById("logBrewSection").style.display = "none";
+        }
+
+        // Set Rating Stars in UI
+        function setRating(rating) {
+            selectedRating = rating;
+            const stars = document.querySelectorAll(".rating-star");
+            stars.forEach((star, idx) => {
+                if (idx < rating) {
+                    star.classList.add("active");
+                } else {
+                    star.classList.remove("active");
+                }
+            });
+        }
+
+        // Submit Brew Log to Backend
+        async function submitBrewLog() {
+            const teaSelect = document.getElementById("timerTeaSelect");
+            const teaId = parseInt(teaSelect.value);
+            const initialDuration = parseInt(document.getElementById("timerDuration").value) || 180;
+            const actualDuration = initialDuration - timerRemaining; // Log brewed duration
+            
+            if (actualDuration <= 0) {
+                showToast("Brewing duration must be greater than 0!", "error");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/brews`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        tea_id: teaId,
+                        duration_seconds: actualDuration,
+                        rating: selectedRating
+                    })
+                });
+
+                if (!response.ok) throw new Error("Could not log brew session.");
+                
+                showToast("Brew session logged successfully!");
+                resetTimer();
+                await fetchBrews();
+                await fetchAnalytics();
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        }
+
+        // Fetch Brew Logs History
+        async function fetchBrews() {
+            const container = document.getElementById("brewList");
+            try {
+                const response = await fetch(`${API_URL}/brews`);
+                if (!response.ok) throw new Error("Could not fetch brew history.");
+                
+                const brews = await response.json();
+                container.innerHTML = "";
+                
+                if (brews.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            <div>No brews logged yet. Start brewing!</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                brews.forEach(b => {
+                    const starsHtml = '<i class="fa-solid fa-star"></i>'.repeat(b.rating) + 
+                                     '<i class="fa-regular fa-star"></i>'.repeat(5 - b.rating);
+                                     
+                    const item = document.createElement("div");
+                    item.className = "brew-item";
+                    item.innerHTML = `
+                        <div class="brew-meta">
+                            <div class="brew-tea-name">${escapeHtml(b.tea_name)}</div>
+                            <div class="brew-time-details">
+                                <i class="fa-solid fa-hourglass-end"></i> ${b.duration_seconds}s | 
+                                <span class="brew-stars">${starsHtml}</span>
+                            </div>
+                        </div>
+                        <div style="font-size: 0.7rem; color: var(--text-secondary); text-align: right;">
+                            ${b.brewed_at}
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = `<div style="text-align: center; color: var(--accent-danger);">Failed to load brew history.</div>`;
+            }
+        }
+
+        // Fetch and Render Analytics Dashboard (Chart.js)
+        async function fetchAnalytics() {
+            try {
+                const response = await fetch(`${API_URL}/analytics`);
+                if (!response.ok) throw new Error("Could not fetch analytics.");
+                
+                const data = await response.json();
+                
+                // Update numerical values
+                document.getElementById("statTotalTeas").innerText = data.total_teas;
+                document.getElementById("statTotalBrews").innerText = data.total_brews;
+                document.getElementById("statAvgPrice").innerText = `$${data.average_price.toFixed(2)}`;
+                document.getElementById("statAvgRating").innerText = `${data.average_rating}/5`;
+
+                // Render/Update Flavor Distribution Chart (Doughnut)
+                const flavorLabels = Object.keys(data.flavor_distribution);
+                const flavorValues = Object.values(data.flavor_distribution);
+
+                if (flavorChartObj) {
+                    flavorChartObj.destroy();
+                }
+
+                const ctxFlavor = document.getElementById("flavorChart").getContext("2d");
+                flavorChartObj = new Chart(ctxFlavor, {
+                    type: 'doughnut',
+                    data: {
+                        labels: flavorLabels,
+                        datasets: [{
+                            data: flavorValues,
+                            backgroundColor: [
+                                '#10b981', '#6366f1', '#f59e0b', '#ec4899', '#3b82f6', '#8b5cf6'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    color: '#9ca3af',
+                                    font: { size: 9, family: 'Plus Jakarta Sans' }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Render/Update Rating Distribution Chart (Bar)
+                const ratingLabels = ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'];
+                const ratingValues = [
+                    data.rating_distribution[1] || 0,
+                    data.rating_distribution[2] || 0,
+                    data.rating_distribution[3] || 0,
+                    data.rating_distribution[4] || 0,
+                    data.rating_distribution[5] || 0
+                ];
+
+                if (ratingChartObj) {
+                    ratingChartObj.destroy();
+                }
+
+                const ctxRating = document.getElementById("ratingChart").getContext("2d");
+                ratingChartObj = new Chart(ctxRating, {
+                    type: 'bar',
+                    data: {
+                        labels: ratingLabels,
+                        datasets: [{
+                            label: 'Brews',
+                            data: ratingValues,
+                            backgroundColor: '#6366f1',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#9ca3af', font: { size: 9 } }
+                            },
+                            y: {
+                                grid: { color: 'rgba(255,255,255,0.05)' },
+                                ticks: { color: '#9ca3af', font: { size: 9 }, stepSize: 1 }
+                            }
+                        }
+                    }
+                });
+
+            } catch (err) {
+                console.error("Error fetching analytics:", err);
+            }
+        }
+
+        // Initialize elements on load
+        window.addEventListener("DOMContentLoaded", async () => {
+            // Set initial stars
+            setRating(5);
+            
+            // Listen to timer duration changes
+            document.getElementById("timerDuration").addEventListener("input", (e) => {
+                if (!isTimerRunning) {
+                    timerRemaining = parseInt(e.target.value) || 180;
+                    updateTimerDisplay();
+                }
+            });
+
+            // Initial fetches
+            await fetchTeas();
+            await fetchBrews();
+            await fetchAnalytics();
         });
     </script>
 </body>
