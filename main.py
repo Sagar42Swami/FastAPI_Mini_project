@@ -13,6 +13,22 @@ from database import SessionLocal, engine
 # Create the database tables
 models.Base.metadata.create_all(bind=engine)
 
+# Seed database if empty
+db = SessionLocal()
+try:
+    if db.query(models.Tea).count() == 0:
+        starter_teas = [
+            models.Tea(name="Royal Oolong", flavor="Earthy, Woody", price=14.99),
+            models.Tea(name="Classic Matcha", flavor="Sweet, Umami", price=19.99),
+            models.Tea(name="Earl Grey", flavor="Bergamot, Citrus", price=9.99),
+            models.Tea(name="Jasmine Green", flavor="Floral, Fresh", price=11.50),
+            models.Tea(name="Chamomile Blossom", flavor="Herbal, Calming", price=8.50),
+        ]
+        db.add_all(starter_teas)
+        db.commit()
+finally:
+    db.close()
+
 app = FastAPI(
     title="BrewPredict API",
     description="FastAPI application for managing teas, tracking brews, and making ML predictions",
