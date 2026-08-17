@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
 import joblib
+import os
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -31,8 +32,10 @@ def get_db():
 # -----------------------------
 # Load ML Model
 # -----------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 try:
-    model = joblib.load("model.pkl")
+    model = joblib.load(os.path.join(BASE_DIR, "model.pkl"))
 except FileNotFoundError:
     model = None
 
@@ -82,7 +85,8 @@ class PredictionResponse(BaseModel):
 @app.get("/", response_class=HTMLResponse)
 def read_root():
     try:
-        with open("index.html", "r", encoding="utf-8") as f:
+        index_path = os.path.join(BASE_DIR, "index.html")
+        with open(index_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read(), status_code=200)
     except FileNotFoundError:
         return HTMLResponse(content="<h1>BrewPredict Dashboard: index.html not found</h1>", status_code=404)
