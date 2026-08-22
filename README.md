@@ -60,29 +60,7 @@ POST	/predict	Generate an ML prediction
 
 
 
----
 
-🛠️ Technologies Used
-
-Python 3.10+
-
-FastAPI
-
-Pydantic
-
-Uvicorn
-
-Joblib
-
-Scikit-learn — for the trained ML model
-
-REST API
-
-Swagger/OpenAPI
-
-
-
----
 
 📂 Project Structure
 
